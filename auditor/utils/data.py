@@ -20,6 +20,16 @@ def batchify(data, batch_size=8):
         yield data[i:i+batch_size]
 
 
+class StoredLLMEvalResult:
+    LLMEvalResult = None
+    created_at = None
+
+    def __init__(self, llm_eval_result: LLMEvalResult, created_at: str):
+        self.LLMEvalResult = llm_eval_result
+        self.created_at = created_at
+
+
+
 @enum.unique
 class LLMEvalType(enum.Enum):
     """String representation for evaluation type"""
