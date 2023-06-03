@@ -17,7 +17,7 @@ class SqliteStore:
         self._create_db_table()
 
     def _create_db_table(self):
-        db_name = f'/Users/mgaradi/Documents/projects/fiddler-auditor/examples/{DB_NAME}.db'
+        db_name = f'/tmp/{DB_NAME}.db'
         self._conn = sqlite3.connect(db_name)
         table_def = f'CREATE TABLE IF NOT EXISTS {TABLE} (\
           id TEXT PRIMARY KEY,\
