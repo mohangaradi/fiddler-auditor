@@ -1,4 +1,5 @@
-from typing import Any, List, Optional, Dict, Literal
+import pickle
+from typing import Any, List, Optional, Dict, Literal, Tuple
 from dataclasses import dataclass
 import enum
 import os
@@ -6,6 +7,7 @@ import os
 import numpy as np
 import pandas as pd
 
+from auditor.store.sqlstore import SqliteStore
 
 RENDER_STR = {
     'perturbed_prompts': 'Perturbed Prompts',
@@ -17,17 +19,7 @@ RENDER_STR = {
 
 def batchify(data, batch_size=8):
     for i in range(0, len(data), batch_size):
-        yield data[i:i+batch_size]
-
-
-class StoredLLMEvalResult:
-    LLMEvalResult = None
-    created_at = None
-
-    def __init__(self, llm_eval_result: LLMEvalResult, created_at: str):
-        self.LLMEvalResult = llm_eval_result
-        self.created_at = created_at
-
+        yield data[i:i + batch_size]
 
 
 @enum.unique
@@ -61,14 +53,14 @@ class TestResult:
 
 class TestSummary:
     def __init__(
-        self,
-        results: List[List[TestResult]],
-        robust_accuracy: float,
-        description: str,
-        total_perturbations: int,
-        original_dataset_size: int,
-        perturbations_per_sample: int,
-        perturbation_type: str,
+            self,
+            results: List[List[TestResult]],
+            robust_accuracy: float,
+            description: str,
+            total_perturbations: int,
+            original_dataset_size: int,
+            perturbations_per_sample: int,
+            perturbation_type: str,
     ) -> None:
         self._index = -1
         self.description = description
@@ -113,8 +105,8 @@ class TestSummary:
 
 class TestSuiteSummary:
     def __init__(
-        self,
-        description: str,
+            self,
+            description: str,
     ) -> None:
         self.description = description
         self.summaries = []
@@ -136,8 +128,8 @@ class TestSuiteSummary:
             raise StopIteration
 
     def add(
-        self,
-        test_summary: TestSummary,
+            self,
+            test_summary: TestSummary,
     ) -> None:
         if not isinstance(test_summary, TestSummary):
             raise ValueError('Expected summary of type TestSummary')
@@ -167,19 +159,20 @@ class PerturbedTextDataset:
 
 class LLMEvalResult:
     """Class to store LLM evaluation results"""
+
     def __init__(
-        self,
-        original_prompt: str,
-        pre_context: str,
-        post_context: str,
-        perturbed_prompts: List[str],
-        perturbed_generations: List[str],
-        result: List[int],
-        metric: List[Dict[str, Any]],
-        expected_behavior_desc: str,
-        evaluation_type: Literal[LLMEvalType.robustness, LLMEvalType.correctness],  # noqa: E501
-        reference_generation: Optional[str] = None,
-        generation_kwargs: Optional[Dict[str, str]] = None,
+            self,
+            original_prompt: str,
+            pre_context: str,
+            post_context: str,
+            perturbed_prompts: List[str],
+            perturbed_generations: List[str],
+            result: List[int],
+            metric: List[Dict[str, Any]],
+            expected_behavior_desc: str,
+            evaluation_type: Literal[LLMEvalType.robustness, LLMEvalType.correctness],  # noqa: E501
+            reference_generation: Optional[str] = None,
+            generation_kwargs: Optional[Dict[str, str]] = None,
     ) -> None:
         self.original_prompt = original_prompt
         self.pre_context = pre_context
@@ -226,17 +219,17 @@ class LLMEvalResult:
 
     @staticmethod
     def render_llm_results(
-        original_prompt: str,
-        pre_context: str,
-        post_context: str,
-        reference_generation: str,
-        evaluation_type: str,
-        perturbed_prompts: List[str],
-        perturbed_generations: List[str],
-        test_result: List[int],
-        metric: List[Dict[str, Any]],
-        generation_kwargs: Optional[Dict[str, str]] = None,
-        expected_behavior_desc: Optional[str] = None,
+            original_prompt: str,
+            pre_context: str,
+            post_context: str,
+            reference_generation: str,
+            evaluation_type: str,
+            perturbed_prompts: List[str],
+            perturbed_generations: List[str],
+            test_result: List[int],
+            metric: List[Dict[str, Any]],
+            generation_kwargs: Optional[Dict[str, str]] = None,
+            expected_behavior_desc: Optional[str] = None,
     ) -> str:
         # report type
         report_type = f'{evaluation_type} report'
@@ -311,6 +304,62 @@ class LLMEvalResult:
             f'</div>'
         )
 
+    def save_to_db(self):
+        sqlite_store = SqliteStore()
+        expected_behavior_desc = ''
+        if self.expected_behavior_desc is not None:
+            expected_behavior_desc = self.expected_behavior_desc
+        sqlite_store.create_report(
+            original_prompt=self.original_prompt,
+            pre_context=self.pre_context,
+            post_context=self.post_context,
+            reference_generation=self.reference_generation,
+            evaluation_type=self.evaluation_type.value,
+            perturbed_generations=self.perturbed_generations,
+            perturbed_prompts=self.perturbed_prompts,
+            test_result=self.result,
+            metric=self.metric,
+            expected_behavior_desc=expected_behavior_desc
+        )
+
+    @staticmethod
+    def render_all_stored_results_from_db():
+        sqlite_store = SqliteStore()
+        stored_llm_eval_results = list()
+        results = sqlite_store.get_reports_by_type()
+        for result in results:
+            s_llm_eval_res = LLMEvalResult._db_to_llm_eval_result(result)
+            if s_llm_eval_res is not None:
+                stored_llm_eval_results.append(s_llm_eval_res)
+
+        return stored_llm_eval_results
+
+    @staticmethod
+    def _db_to_llm_eval_result(result: Tuple) -> dict:
+        if len(result) < 15:
+            return None
+
+        model_results = list()
+        for model_res in result[9].split('||'):
+            model_results.append(int(model_res))
+
+        metric = pickle.loads(result[12])
+
+        eval_type = None
+        for le_type in LLMEvalType:
+            if le_type.value == result[13]:
+                eval_type = le_type
+
+        llm_eval_res = LLMEvalResult(pre_context=result[4], post_context=result[5], original_prompt=result[6],
+                                     reference_generation=result[7].split('||'), expected_behavior_desc=result[8],
+                                     result=model_results, perturbed_prompts=result[10].split('||'),
+                                     perturbed_generations=result[11].split('||'), metric=metric,
+                                     evaluation_type=eval_type
+                                     )
+
+        stored_llm_res = {'llm_eval_res': llm_eval_res, 'uuid': result[0], 'created_at': result[14]}
+        return stored_llm_res
+
     def save(self, file_path: str) -> None:
         """Save results in HTML format.
 
@@ -335,5 +384,6 @@ class LLMEvalResult:
             else:
                 color = '#FD9275'  # red
             return ['background-color: {}'.format(color) for r in row]
+
         styled_df = df.style.apply(highlight_rows, axis=1)
         return styled_df.format(precision=2)
