@@ -323,7 +323,17 @@ class LLMEvalResult:
         )
 
     @staticmethod
-    def render_all_stored_results_from_db():
+    def render_db_result_by_uuid(uuid: str):
+        sqlite_store = SqliteStore()
+        results = sqlite_store.get_reports_by_uuid(uuid)
+        for result in results:
+            s_llm_eval_res = LLMEvalResult._db_to_llm_eval_result(result)
+            return s_llm_eval_res
+
+        return None
+
+    @staticmethod
+    def render_all_db_results():
         sqlite_store = SqliteStore()
         stored_llm_eval_results = list()
         results = sqlite_store.get_reports_by_type()

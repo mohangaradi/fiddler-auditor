@@ -2,6 +2,8 @@
 <html>
 <head>
   <title>Jenkins Report</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.7.0/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.7.0/js/bootstrap.min.js"></script>
   <style>
     /* CSS styles for the report */
     body {
@@ -71,10 +73,10 @@
     }
   </style>
   <script>
-    function showSelectedValue(element) {
-      var selectedValue = element.value;
-      alert("Selected value: " + selectedValue);
-    }
+  function showSelectedValue(element) {
+    var selectedValue = element.value;
+    document.getElementById("selectedValue" + element.dataset.index).textContent = selectedValue;
+  }
   </script>
 </head>
 <body>
@@ -97,21 +99,25 @@
           </tr>
         </thead>
         <tbody>
-          {% for result in run_results %}
-          <tr>
-            <td>{{ result['test_name'] }}</td>
-            <td>
-              <select>
-                {% for status in result['statuses'] %}
-                <option value="{{ status }}">{{ status }}</option>
-                {% endfor %}
-              </select>
-            </td>
-            <td>
-              <button class="view-button" onclick="showSelectedValue(this.parentElement.previousElementSibling.querySelector('select'))">View</button>
-            </td>
-          </tr>
-          {% endfor %}
+        <!-- Modal Window -->
+        {% for result in run_results %}
+        <div class="modal fade" id="myModal{{ loop.index }}" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel">Selected Value</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p>Selected value: <span id="selectedValue{{ loop.index }}"></span></p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
         </tbody>
       </table>
     </div>

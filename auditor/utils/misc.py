@@ -8,7 +8,7 @@ def round_list(nums: List[float], precision=2):
 
 def get_stored_runs():
     # Stored as {"prompt": [{"eval_type": "Correctness", "created_at": "2023-05-01", "uuid": uuid}]}
-    stored_eval_results = LLMEvalResult.render_all_stored_results_from_db()
+    stored_eval_results = LLMEvalResult.render_all_db_results()
     sorted_results = dict()
     if len(stored_eval_results) > 1:
         for eval_res in stored_eval_results:

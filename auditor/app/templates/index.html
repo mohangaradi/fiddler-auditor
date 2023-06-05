@@ -71,15 +71,17 @@
     }
   </style>
   <script>
-    function showSelectedValue(element) {
-      var selectedValue = element.value;
-      alert("Selected value: " + selectedValue);
-    }
+      function openNewTab(element) {
+        var selectedValue = element.value;
+        var url = window.location.href + "/result?selectedValue=" + encodeURIComponent(selectedValue);
+        window.open(url, '_blank');
+      }
   </script>
 </head>
 <body>
   <div class="header">
-    <h1>LLM Report</h1>
+    <h1>Genkins LLM Report</h1>
+    <h6>Powered by Fiddler Auditor<h6>
   </div>
   <div class="content">
     <div class="section">
@@ -96,18 +98,18 @@
           </tr>
         </thead>
         <tbody>
-          {% for result in run_results: %}
+          {% for result in run_results %}
           <tr>
-            <td>{{ result['test_name'] }}</td>
+            <td>{{ result['prompt'] }}</td>
             <td>
               <select>
                 {% for status in result['statuses'] %}
-                <option value="{{ status }}">{{ status }}</option>
+                <option value="{{ status.id }}">{{ status.status }}</option>
                 {% endfor %}
               </select>
             </td>
             <td>
-              <button class="view-button" onclick="showSelectedValue(this.parentElement.previousElementSibling.querySelector('select'))">View</button>
+              <button class="view-button" onclick="openNewTab(this.parentElement.previousElementSibling.querySelector('select'))">View</button>
             </td>
           </tr>
           {% endfor %}

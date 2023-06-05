@@ -17,7 +17,7 @@ class SqliteStore:
         self._create_db_table()
 
     def _create_db_table(self):
-        db_name = f'/opt/db/{DB_NAME}.db'
+        db_name = f'../../examples/{DB_NAME}.db'
         self._conn = sqlite3.connect(db_name)
         table_def = f'CREATE TABLE IF NOT EXISTS {TABLE} (\
           id TEXT PRIMARY KEY,\
@@ -75,10 +75,21 @@ class SqliteStore:
         ''', row)
         self._conn.commit()
 
+    # If not type is passed, we get results for all types like correctness, robustness etc
     def get_reports_by_type(self, evaluation_type: str = '') -> Optional[List[Tuple]]:
         query = 'SELECT * FROM reports'
         if evaluation_type != '':
             query = f'{query} WHERE evaluation_type={evaluation_type}'
+        self.cursor.execute(query)
+        results = self.cursor.fetchall()
+
+        return results
+
+    def get_reports_by_uuid(self, uuid: str) -> Optional[Tuple]:
+        if uuid == '':
+            return None
+
+        query = f'SELECT * FROM reports WHERE id=\'{uuid}\''
         self.cursor.execute(query)
         results = self.cursor.fetchall()
 
