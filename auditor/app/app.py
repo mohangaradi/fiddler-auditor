@@ -1,9 +1,8 @@
 from flask import Flask, render_template, request
-from auditor.utils.misc import get_stored_runs
+from auditor.utils.misc import get_stored_runs, runner
 from auditor.utils.data import LLMEvalResult
 
 app = Flask(__name__)
-
 
 res = get_stored_runs()
 run_results = list()
@@ -36,6 +35,23 @@ def result():
     result = LLMEvalResult.render_db_result_by_uuid(uuid)
     rendered_template = render_template('result.html', run_result=result['llm_eval_res'])
     return rendered_template, 200, {'Content-Type': 'text/html'}
+
+
+@app.route('/run', methods=['GET'])
+def run():
+    prompt = request.args.get('prompt')
+    if prompt is None:
+        return render_template('run.html')
+
+    reference_gen = request.args.get('reference_gen')
+    if reference_gen is not None:
+        runner('correctness', prompt, reference_gen)
+        return render_template('run.html',
+                               status='Request for correctness evaluation is processing. Go to the results page <a href=\'http://127.0.0.1:5000/\'>here</a> and check the status')
+    else:
+        runner('robustness', prompt, '')
+        return render_template('run.html',
+                               status='Request for robustness evaluation is processing. Go to the results page <a href=\'http://127.0.0.1:5000/\'>here</a> and check the status')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Two Sections Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1f1f1f; /* Dark background color */
+      color: #fff; /* Text color */
+    }
+
+    .header {
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+    }
+    .header h1 {
+      margin: 0;
+    }
+
+    section {
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    label {
+      width: 200px;
+      text-align: right;
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      width: 500px;
+      height: 150px;
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+
+    input[type="submit"] {
+      width: 150px;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+
+    .view-button {
+      background-color: #555; /* Button background color */
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+  </style>
+ <script>
+    function submitForm() {
+      var textSection1 = document.getElementById('textsection1').value;
+      var textSection2 = document.getElementById('textsection2').value;
+      var textSection3 = document.getElementById('textsection3').value;
+
+      // Do something with the form data (example: display in console)
+      console.log('Text Section 1:', textSection1);
+      console.log('Text Section 2:', textSection2);
+      console.log('Text Section 3:', textSection3);
+
+      // Reset the form
+      document.getElementById('textsection1').value = '';
+      document.getElementById('textsection2').value = '';
+      document.getElementById('textsection3').value = '';
+    }
+  </script>
+</head>
+<body>
+  <div class="header">
+    <h1>Genkins LLM Evaluator</h1>
+  </div>
+  <section>
+    <h2>Evaluate Correctness</h2>
+    <form>
+      <label for="prompt">Prompt</label>
+      <textarea id="prompt" name="prompt" required></textarea>
+
+      <label for="reference_gen">Reference Generation</label>
+      <textarea id="reference_gen" name="reference_gen" required></textarea>
+
+      <button class="view-button" onclick="submitForm()">Submit</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Evaluate Robustness</h2>
+    <form>
+      <label for="prompt">Prompt</label>
+      <textarea id="prompt" name="prompt" required></textarea>
+
+      <button class="view-button" onclick="submitForm()">Submit</button>
+    </form>
+  </section>
+
+  <h3 style="color: red;">{{ status | safe }}</h3>
+</body>
+</html>
